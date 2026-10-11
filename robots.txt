@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sahithik04.github.io/sahithiK04/sitemap.xml

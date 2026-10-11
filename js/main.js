@@ -532,6 +532,8 @@ window.addEventListener('keydown', (e) => {
 // =========================================================
 // 12. PROJECTS LUXURY HORIZONTAL SLIDING CAROUSEL
 // =========================================================
+let projectSliderDragMoved = false;
+
 function initProjectsSlider() {
   const track = document.getElementById('projects-slider-track');
   const viewport = document.querySelector('.projects-slider-viewport');
@@ -541,11 +543,13 @@ function initProjectsSlider() {
   if (cards.length === 0) return;
 
   const prevBtns = [
+    document.getElementById('proj-bar-prev'),
     document.getElementById('proj-slider-prev'),
     document.getElementById('proj-side-prev')
   ].filter(Boolean);
 
   const nextBtns = [
+    document.getElementById('proj-bar-next'),
     document.getElementById('proj-slider-next'),
     document.getElementById('proj-side-next')
   ].filter(Boolean);
@@ -596,6 +600,7 @@ function initProjectsSlider() {
       dot.className = `slider-dot ${i === currentSlide ? 'active' : ''}`;
       dot.setAttribute('aria-label', `Slide ${i + 1}`);
       dot.setAttribute('type', 'button');
+      dot.dataset.cursor = 'hover';
       dot.addEventListener('click', (e) => {
         e.preventDefault();
         goToSlide(i);
@@ -701,21 +706,35 @@ function initProjectsSlider() {
 
   // Delegated global click listener for bulletproof button interaction
   document.addEventListener('click', (e) => {
-    const prevBtn = e.target.closest('#proj-slider-prev, #proj-side-prev');
+    const prevBtn = e.target.closest('#proj-bar-prev, #proj-slider-prev, #proj-side-prev');
     if (prevBtn) {
       e.preventDefault();
       prevSlide();
       return;
     }
 
-    const nextBtn = e.target.closest('#proj-slider-next, #proj-side-next');
+    const nextBtn = e.target.closest('#proj-bar-next, #proj-slider-next, #proj-side-next');
     if (nextBtn) {
+      e.preventDefault();
+      nextSlide();
+      return;
+    }
+
+    const counterBtn = e.target.closest('#proj-counter-pill');
+    if (counterBtn) {
       e.preventDefault();
       nextSlide();
       return;
     }
   });
 
+  // Disable native HTML5 image dragging on project cards to allow buttery smooth sliding
+  track.querySelectorAll('img').forEach(img => {
+    img.setAttribute('draggable', 'false');
+    img.addEventListener('dragstart', (e) => e.preventDefault());
+  });
+
+  // Touch swipe support
   let touchStartX = 0;
   let touchStartY = 0;
   let isSwiping = false;
@@ -741,6 +760,40 @@ function initProjectsSlider() {
     }
     isSwiping = false;
   }, { passive: true });
+
+  // Mouse drag support for smooth sliding across cards
+  let isPointerDown = false;
+  let dragStartX = 0;
+
+  track.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || e.target.closest('a, button')) return;
+    isPointerDown = true;
+    dragStartX = e.clientX;
+    projectSliderDragMoved = false;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPointerDown) return;
+    if (Math.abs(e.clientX - dragStartX) > 8) {
+      projectSliderDragMoved = true;
+    }
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (!isPointerDown) return;
+    const diffX = e.clientX - dragStartX;
+    if (projectSliderDragMoved && Math.abs(diffX) > 40) {
+      if (diffX < 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+    setTimeout(() => {
+      isPointerDown = false;
+      projectSliderDragMoved = false;
+    }, 80);
+  });
 
   let resizeTimer = null;
   window.addEventListener('resize', () => {
@@ -817,31 +870,32 @@ if (contactForm) {
 }
 
 // =========================================================
-// 14. GLOWING SPIDER TIMELINE COMPANION (Smooth Scroll Rail Rider)
+// 14. CUTE KAWAII WHITE CAT TIMELINE COMPANION (Smooth Scroll Rail Rider)
 // =========================================================
 function initTimelineSpider() {
-  const spider = document.getElementById('timeline-spider') || document.getElementById('timeline-cat');
+  const cat = document.getElementById('timeline-cat') || document.getElementById('timeline-spider');
   const container = document.querySelector('.timeline-container');
-  if (!spider || !container) return;
+  if (!cat || !container) return;
 
   let currentY = 0;
   let targetY = 0;
-  let isCrawling = false;
-  let crawlStopTimeout = null;
+  let isMoving = false;
+  let moveStopTimeout = null;
 
   function updateTargetFromClientY(clientY) {
     const rect = container.getBoundingClientRect();
     const maxY = Math.max(0, container.offsetHeight - 52);
-    // Align spider vertically with cursor position relative to timeline container
     const computedY = clientY - rect.top - 24;
     targetY = Math.max(0, Math.min(computedY, maxY));
-    isCrawling = true;
-    spider.classList.add('is-scrolling');
+    isMoving = true;
+    cat.classList.remove('saying-hi');
+    cat.classList.add('is-scrolling');
 
-    clearTimeout(crawlStopTimeout);
-    crawlStopTimeout = setTimeout(() => {
-      isCrawling = false;
-      spider.classList.remove('is-scrolling');
+    clearTimeout(moveStopTimeout);
+    moveStopTimeout = setTimeout(() => {
+      isMoving = false;
+      cat.classList.remove('is-scrolling');
+      cat.classList.add('saying-hi');
     }, 220);
   }
 
@@ -857,46 +911,48 @@ function initTimelineSpider() {
     }
   }, { passive: true });
 
-  // Keep responsive when scrolling
+  // Responsive scroll rider tracking
   window.addEventListener('scroll', () => {
     const rect = container.getBoundingClientRect();
     const focalPoint = window.innerHeight * 0.42;
     const computedY = focalPoint - rect.top - 24;
     const maxY = Math.max(0, container.offsetHeight - 52);
     targetY = Math.max(0, Math.min(computedY, maxY));
-    isCrawling = true;
-    spider.classList.add('is-scrolling');
+    isMoving = true;
+    cat.classList.remove('saying-hi');
+    cat.classList.add('is-scrolling');
 
-    clearTimeout(crawlStopTimeout);
-    crawlStopTimeout = setTimeout(() => {
-      isCrawling = false;
-      spider.classList.remove('is-scrolling');
+    clearTimeout(moveStopTimeout);
+    moveStopTimeout = setTimeout(() => {
+      isMoving = false;
+      cat.classList.remove('is-scrolling');
+      cat.classList.add('saying-hi');
     }, 200);
   }, { passive: true });
 
-  // 60FPS continuous smooth crawl loop
-  function crawlAnimationLoop() {
+  // 60FPS continuous smooth movement loop
+  function movementAnimationLoop() {
     const diff = targetY - currentY;
     if (Math.abs(diff) > 0.4) {
       currentY += diff * 0.16;
-      spider.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0)`;
-      spider.classList.add('is-scrolling');
+      cat.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0)`;
+      cat.classList.add('is-scrolling');
     } else {
-      if (!isCrawling) {
-        spider.classList.remove('is-scrolling');
+      if (!isMoving) {
+        cat.classList.remove('is-scrolling');
       }
     }
-    requestAnimationFrame(crawlAnimationLoop);
+    requestAnimationFrame(movementAnimationLoop);
   }
 
-  crawlAnimationLoop();
+  movementAnimationLoop();
 
-  // Playful click interaction: silk bungee hop
-  spider.addEventListener('click', (e) => {
+  // Playful click interaction: cute kitty hop
+  cat.addEventListener('click', (e) => {
     e.stopPropagation();
-    spider.classList.add('spider-jump');
+    cat.classList.add('cat-jump');
     setTimeout(() => {
-      spider.classList.remove('spider-jump');
+      cat.classList.remove('cat-jump');
     }, 450);
   });
 }
@@ -1020,6 +1076,10 @@ function initProjectPopout() {
 
   projectCards.forEach(card => {
     card.addEventListener('click', (e) => {
+      // If user was dragging to slide, don't open modal
+      if (projectSliderDragMoved) {
+        return;
+      }
       // If user directly clicked the small 'Source Code' link on card, don't open modal
       if (e.target.closest('.project-link')) {
         return;
